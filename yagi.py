@@ -72,6 +72,7 @@ class YagiDesign(QWidget):
         el_d_sb.setMinimum(0.1)
         el_d_sb.setMaximum(20)
         el_d_sb.setSingleStep(0.1)
+        el_d_sb.setValue(3.2)
         self.spinners["EL_D"] = el_d_sb
         hl.addWidget(QLabel("Element diameter (mm)"))
         hl.addWidget(el_d_sb)
