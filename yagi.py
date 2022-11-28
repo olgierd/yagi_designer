@@ -9,7 +9,9 @@ import jinja2
 
 # wire_template = "GW ###WNR 15 ###POS###WNR -###LEN###WNR 0.0 ###POS###WNR ###LEN###WNR 0.0 ###EL_R"
 
-tpl = """{% for wire in data.wires %}GW {{wire.nr}} 15 {{wire.pos}} -{{wire.len}} 0.0 {{wire.pos}} {{wire.len}} 0.0 {{data.r}}
+tpl = """CM --- NEC2 Input File created or edited by xnec2c 4.4.12 ---
+CE --- End Comments ---
+{% for wire in data.wires %}GW {{wire.nr}} 15 {{wire.pos}} -{{wire.len}} 0.0 {{wire.pos}} {{wire.len}} 0.0 {{data.r}}
 {% endfor %}GE 0 0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
 EX 0 2 8 0 1.0 0.0 0.0 0.0 0.0 0.0
 FR 0 3 0 0 {{ data.freq }} 1.0 {{ data.freq }} 0.0 0.0 0.0
@@ -142,7 +144,6 @@ class YagiDesign(QWidget):
 
     def update(self):
 
-        # cc = self.template
         data = {}
 
         # set element radius (dia/2)
@@ -156,12 +157,11 @@ class YagiDesign(QWidget):
             wire = {}
 
             wire["nr"] = x+1
-            wire["pos"] = self.spinners[f"POS{x+1}"].value()
-            wire["len"] = self.spinners[f"LEN{x+1}"].value()
+            wire["pos"] = self.spinners[f"POS{x+1}"].value()/100
+            wire["len"] = self.spinners[f"LEN{x+1}"].value()/2/100
             data["wires"].append(wire)
 
         data["freq"] = self.spinners["FREQ"].value()
-        # cc = cc.replace("###FREQ", f"{freq:.5}")
 
         template = self.j2_env.from_string(tpl)
         nec_file = template.render(data=data)
