@@ -4,16 +4,22 @@ import argparse
 import shutil
 import subprocess
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QDoubleSpinBox, QLabel
+import jinja2
 
-wire_template = "GW ###WNR 15 ###POS###WNR -###LEN###WNR 0.0 ###POS###WNR ###LEN###WNR 0.0 ###EL_R"
 
-tpl = """GE 0 0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+# wire_template = "GW ###WNR 15 ###POS###WNR -###LEN###WNR 0.0 ###POS###WNR ###LEN###WNR 0.0 ###EL_R"
+
+tpl = """CM --- NEC2 Input File created or edited by xnec2c 4.4.12 ---
+CE --- End Comments ---
+{% for wire in data.wires %}GW {{wire.nr}} 15 {{wire.pos}} -{{wire.len}} 0.0 {{wire.pos}} {{wire.len}} 0.0 {{data.r}}
+{% endfor %}GE 0 0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
 EX 0 2 8 0 1.0 0.0 0.0 0.0 0.0 0.0
-FR 0 3 0 0 ###FREQ 1.0 ###FREQ 0.0 0.0 0.0
+FR 0 3 0 0 {{ data.freq }} 1.0 {{ data.freq }} 0.0 0.0 0.0
 NH 0 0 0 0 0.0 0.0 0.0 0.0 0.0 0.0
 NE 0 10 1 10 -1.35 0.0 -1.35 0.3 0.0 0.3
 RP 0 19 37 1000 0.0 0.0 10.0 10.0 0.0 0.0
 EN 0 0 0 0 0.0 0.0 0.0 0.0 0.0 0.0
+
 """
 
 
@@ -47,13 +53,13 @@ class YagiDesign(QWidget):
         results = {"Re": real, "Im": imag, "dBi": fwd_gain, "SWR": vswr, "F/B": fwd_gain-rew_gain}
         return results
 
-    def prepare_template(self, elements):
-        template = ""
-        for x in range(1, elements+1):
-            template += wire_template.replace("###WNR", str(x)) + "\n"
-        template += tpl
+    # def prepare_template(self, elements):
+    #     template = ""
+    #     for x in range(1, elements+1):
+    #         template += wire_template.replace("###WNR", str(x)) + "\n"
+    #     template += tpl
 
-        return template
+    #     return template
 
     def __init__(self, args):
         super(QWidget, self).__init__()
@@ -61,8 +67,10 @@ class YagiDesign(QWidget):
 
         self.filepath = "/tmp/yagidesign"
 
+        self.j2_env = jinja2.Environment()
+
         self.elements = int(args.elements)
-        self.template = self.prepare_template(self.elements)
+        # self.template = self.prepare_template(self.elements)
         self.spinners = {}
 
         el_names = ["Ref", "DE"] + [f"D{x+1}" for x in range(self.elements)]
@@ -136,30 +144,34 @@ class YagiDesign(QWidget):
 
     def update(self):
 
-        cc = self.template
+        data = {}
 
         # set element radius (dia/2)
         el_d = self.spinners["EL_D"].value()
-        cc = cc.replace("###EL_R", f"{el_d/1000/2:.5}")
+        data["r"] = f"{el_d/1000/2:.5}"
+
+        data["wires"] = []
 
         # set element positions in the template
         for x in range(0, self.elements):
-            position = self.spinners[f"POS{x+1}"].value()
-            cc = cc.replace(f"###POS{x+1}", f"{position/100:.5}")
+            wire = {}
 
-        # set element lengths
-        for x in range(0, self.elements):
-            el_len = self.spinners[f"LEN{x+1}"].value()
-            cc = cc.replace(f"###LEN{x+1}", f"{el_len/2/100:.5}")
+            wire["nr"] = x+1
+            wire["pos"] = self.spinners[f"POS{x+1}"].value()/100
+            wire["len"] = self.spinners[f"LEN{x+1}"].value()/2/100
+            data["wires"].append(wire)
 
-        freq = self.spinners["FREQ"].value()
-        cc = cc.replace("###FREQ", f"{freq:.5}")
+        data["freq"] = self.spinners["FREQ"].value()
+
+        template = self.j2_env.from_string(tpl)
+        nec_file = template.render(data=data)
 
         if args.verbose:
-            print(cc)
+            print(data)
+            print(nec_file)
 
         with open(self.filepath + ".nec", 'w') as f:
-            f.write(cc)
+            f.write(nec_file)
 
         subprocess.run(["nec2c", "-i", self.filepath + ".nec"])
 
@@ -182,6 +194,7 @@ args = parser.parse_args()
 def main():
     if not shutil.which("nec2c"):
         print("nec2c binary not found in PATH. Please install nec2c package.")
+        return 1
 
     app = QApplication(["SWF Yagi designer"])
     yd = YagiDesign(args)
