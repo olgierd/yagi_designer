@@ -91,13 +91,13 @@ class YagiDesign(QWidget):
 
             pos_sb = QDoubleSpinBox()
             pos_sb.setMinimum(0)
-            pos_sb.setMaximum(1000)
-            pos_sb.setSingleStep(0.1)   # 1mm resolution
+            pos_sb.setMaximum(10000)
+            pos_sb.setSingleStep(1)   # 1mm resolution
 
             len_sb = QDoubleSpinBox()
             len_sb.setMinimum(1)
-            len_sb.setMaximum(1000)
-            len_sb.setSingleStep(0.1)
+            len_sb.setMaximum(10000)
+            len_sb.setSingleStep(1)
 
             len_sb.setValue(100)
             pos_sb.setValue(x*10)
@@ -114,7 +114,7 @@ class YagiDesign(QWidget):
         hl = QHBoxLayout()
         freq_sb = QDoubleSpinBox()
         freq_sb.setMinimum(0.1)
-        freq_sb.setMaximum(1500)
+        freq_sb.setMaximum(2500)
         freq_sb.setSingleStep(0.1)
         freq_sb.setValue(145)
         self.spinners["FREQ"] = freq_sb
@@ -157,8 +157,8 @@ class YagiDesign(QWidget):
             wire = {}
 
             wire["nr"] = x+1
-            wire["pos"] = self.spinners[f"POS{x+1}"].value()/100
-            wire["len"] = self.spinners[f"LEN{x+1}"].value()/2/100
+            wire["pos"] = self.spinners[f"POS{x+1}"].value()/1000
+            wire["len"] = self.spinners[f"LEN{x+1}"].value()/2/1000
             data["wires"].append(wire)
 
         data["freq"] = self.spinners["FREQ"].value()
