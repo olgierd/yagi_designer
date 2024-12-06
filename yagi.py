@@ -105,7 +105,7 @@ class YagiDesign(QWidget):
             self.spinners[f"POS{x+1}"] = pos_sb
             self.spinners[f"LEN{x+1}"] = len_sb
 
-            hl.addWidget(QLabel(el_names[x] + " pos/len (cm)"))
+            hl.addWidget(QLabel(el_names[x] + " pos/len (mm)"))
             hl.addWidget(pos_sb)
             hl.addWidget(len_sb)
 
